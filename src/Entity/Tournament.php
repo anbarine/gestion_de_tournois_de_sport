@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: TournamentRepository::class)]
 class Tournament
@@ -14,46 +15,50 @@ class Tournament
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['tournament:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['tournament:read', 'tournament:write'])]
     private ?string $tournamentName = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Groups(['tournament:read', 'tournament:write'])]
     private ?\DateTime $startDate = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Groups(['tournament:read', 'tournament:write'])]
     private ?\DateTime $endDate = null;
 
     #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['tournament:read', 'tournament:write'])]
     private ?string $location = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Groups(['tournament:read', 'tournament:write'])]
     private ?string $description = null;
 
     #[ORM\Column]
-    private ?int $maxPartipants = null;
+    #[Groups(['tournament:read', 'tournament:write'])]
+    private ?int $maxParticipants = null;
 
     #[ORM\Column(length: 255)]
+    #[Groups(['tournament:read', 'tournament:write'])]
     private ?string $sport = null;
 
-    #[ORM\ManyToOne(inversedBy: 'organizer')]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'organizedTournaments')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(['tournament:read', 'tournament:write'])]
     private ?User $organizer = null;
 
-    #[ORM\ManyToOne(inversedBy: 'winner')]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'wonTournaments')]
+    #[ORM\JoinColumn(nullable: true)]
+    #[Groups(['tournament:read', 'tournament:write'])]
     private ?User $winner = null;
 
-    /**
-     * @var Collection<int, Registration>
-     */
     #[ORM\OneToMany(targetEntity: Registration::class, mappedBy: 'tournament')]
     private Collection $tournament_registration;
 
-    /**
-     * @var Collection<int, SportMatch>
-     */
     #[ORM\OneToMany(targetEntity: SportMatch::class, mappedBy: 'tournament')]
     private Collection $tournament_sportmatch;
 
@@ -128,14 +133,14 @@ class Tournament
         return $this;
     }
 
-    public function getMaxPartipants(): ?int
+    public function getMaxParticipants(): ?int
     {
-        return $this->maxPartipants;
+        return $this->maxParticipants;
     }
 
-    public function setMaxPartipants(int $maxPartipants): static
+    public function setMaxParticipants(int $maxParticipants): static
     {
-        $this->maxPartipants = $maxPartipants;
+        $this->maxParticipants = $maxParticipants;
 
         return $this;
     }
@@ -197,7 +202,6 @@ class Tournament
     public function removeTournamentRegistration(Registration $tournamentRegistration): static
     {
         if ($this->tournament_registration->removeElement($tournamentRegistration)) {
-            // set the owning side to null (unless already changed)
             if ($tournamentRegistration->getTournament() === $this) {
                 $tournamentRegistration->setTournament(null);
             }
@@ -227,7 +231,6 @@ class Tournament
     public function removeTournamentSportmatch(SportMatch $tournamentSportmatch): static
     {
         if ($this->tournament_sportmatch->removeElement($tournamentSportmatch)) {
-            // set the owning side to null (unless already changed)
             if ($tournamentSportmatch->getTournament() === $this) {
                 $tournamentSportmatch->setTournament(null);
             }
