@@ -1,8 +1,8 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Gestion des Joueurs</title>
+{% extends 'base.html.twig' %}
+
+{% block title %}Gestion des Joueurs{% endblock %}
+
+{% block stylesheets %}
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -44,7 +44,7 @@
             max-width: 500px;
         }
 
-        input {
+        input, select {
             width: 100%;
             padding: 10px;
             margin-top: 8px;
@@ -92,126 +92,180 @@
             background-color: #f8d7da;
             color: #721c24;
         }
+
+        .alert {
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 5px;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .btn {
+            background-color: #007BFF;
+            padding: 10px 20px;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
     </style>
-</head>
-<body>
+{% endblock %}
 
-<h1>Gestion des Joueurs</h1>
+{% block body %}
+    <h1>Gestion des Joueurs</h1>
 
-<div id="feedback"></div>
+    <div id="feedback"></div>
 
-<table id="playersTable">
-    <thead>
-    <tr>
-        <th>ID</th>
-        <th>Nom</th>
-        <th>Email</th>
-        <th>Actions</th>
-    </tr>
-    </thead>
-    <tbody></tbody>
-</table>
+    <table id="playersTable">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nom</th>
+            <th>Email</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
-<h2>Ajouter / Modifier un joueur</h2>
-<form id="playerForm">
-    <input type="hidden" id="playerId">
-    <label for="playerName">Nom :</label>
-    <input type="text" id="playerName" placeholder="Nom" required>
+    <h2>Ajouter / Modifier un joueur (API)</h2>
+    <form id="playerForm">
+        <input type="hidden" id="playerId">
+        <label for="playerName">Nom :</label>
+        <input type="text" id="playerName" placeholder="Nom" required>
 
-    <label for="playerEmail">Email :</label>
-    <input type="email" id="playerEmail" placeholder="Email" required>
+        <label for="playerEmail">Email :</label>
+        <input type="email" id="playerEmail" placeholder="Email" required>
 
-    <label for="playerPassword">Mot de passe :</label>
-    <input type="password" id="playerPassword" placeholder="Mot de passe" required>
+        <label for="playerPassword">Mot de passe :</label>
+        <input type="password" id="playerPassword" placeholder="Mot de passe" required>
 
-    <button type="submit">Enregistrer</button>
-</form>
+        <button type="submit">Enregistrer</button>
+    </form>
 
-<script>
-    const feedbackDiv = document.getElementById('feedback');
+    {% if registrationForm is defined %}
+        <hr>
+        <h2>Formulaire d'inscription (Symfony)</h2>
 
-    function showMessage(message, type = 'success') {
-        feedbackDiv.innerHTML = `<div class="message ${type}">${message}</div>`;
-        setTimeout(() => feedbackDiv.innerHTML = '', 3000);
-    }
+        {% for flash_error in app.flashes('verify_email_error') %}
+            <div class="alert alert-danger" role="alert">{{ flash_error }}</div>
+        {% endfor %}
 
-    async function fetchPlayers() {
-        const response = await fetch('/api/players');
-        const players = await response.json();
-        const tbody = document.querySelector('#playersTable tbody');
-        tbody.innerHTML = '';
-        players.forEach(player => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${player.id}</td>
-                <td>${player.name}</td>
-                <td>${player.email}</td>
-                <td class="actions">
-                    <button onclick="editPlayer(${player.id}, '${player.name}', '${player.email}')">Modifier</button>
-                    <button onclick="deletePlayer(${player.id})">Supprimer</button>
-                </td>
-            `;
-            tbody.appendChild(row);
+        {{ form_errors(registrationForm) }}
+
+        {{ form_start(registrationForm) }}
+        {{ form_row(registrationForm.username) }}
+        {{ form_row(registrationForm.lastName) }}
+        {{ form_row(registrationForm.firstName) }}
+        {{ form_row(registrationForm.emailAddress) }}
+        {{ form_row(registrationForm.status) }}
+        {{ form_row(registrationForm.plainPassword, { label: 'Password' }) }}
+        {{ form_row(registrationForm.agreeTerms) }}
+        <button type="submit" class="btn">Register</button>
+        {{ form_end(registrationForm) }}
+    {% endif %}
+
+    {% if signedUrl is defined %}
+        <hr>
+        <h2>Email de confirmation</h2>
+        <p>
+            Please confirm your email address by clicking the following link: <br><br>
+            <a href="{{ signedUrl|raw }}">Confirm my Email</a>.<br>
+            This link will expire in {{ expiresAtMessageKey|trans(expiresAtMessageData, 'VerifyEmailBundle') }}.
+        </p>
+        <p>Cheers!</p>
+    {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    <script>
+        const feedbackDiv = document.getElementById('feedback');
+
+        function showMessage(message, type = 'success') {
+            feedbackDiv.innerHTML = `<div class="message ${type}">${message}</div>`;
+            setTimeout(() => feedbackDiv.innerHTML = '', 3000);
+        }
+
+        async function fetchPlayers() {
+            const response = await fetch('/api/players');
+            const players = await response.json();
+            const tbody = document.querySelector('#playersTable tbody');
+            tbody.innerHTML = '';
+            players.forEach(player => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${player.id}</td>
+                    <td>${player.name}</td>
+                    <td>${player.email}</td>
+                    <td class="actions">
+                        <button onclick="editPlayer(${player.id}, '${player.name}', '${player.email}')">Modifier</button>
+                        <button onclick="deletePlayer(${player.id})">Supprimer</button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function editPlayer(id, name, email) {
+            document.getElementById('playerId').value = id;
+            document.getElementById('playerName').value = name;
+            document.getElementById('playerEmail').value = email;
+            document.getElementById('playerPassword').value = '';
+            showMessage('Vous éditez un joueur.', 'success');
+        }
+
+        async function deletePlayer(id) {
+            if (confirm('Supprimer ce joueur ?')) {
+                const res = await fetch(`/api/players/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showMessage('Joueur supprimé.');
+                    fetchPlayers();
+                } else {
+                    showMessage('Erreur lors de la suppression.', 'error');
+                }
+            }
+        }
+
+        document.getElementById('playerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const id = document.getElementById('playerId').value;
+            const name = document.getElementById('playerName').value;
+            const email = document.getElementById('playerEmail').value;
+            const password = document.getElementById('playerPassword').value;
+
+            const playerData = { name, email, password };
+
+            try {
+                if (id) {
+                    const res = await fetch(`/api/players/${id}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(playerData)
+                    });
+                    if (!res.ok) throw new Error();
+                    showMessage('Joueur mis à jour.');
+                } else {
+                    const res = await fetch('/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(playerData)
+                    });
+                    if (!res.ok) throw new Error();
+                    showMessage('Joueur ajouté.');
+                }
+            } catch {
+                showMessage('Une erreur est survenue.', 'error');
+            }
+
+            document.getElementById('playerForm').reset();
+            fetchPlayers();
         });
-    }
 
-    function editPlayer(id, name, email) {
-        document.getElementById('playerId').value = id;
-        document.getElementById('playerName').value = name;
-        document.getElementById('playerEmail').value = email;
-        document.getElementById('playerPassword').value = '';
-        showMessage('Vous éditez un joueur.', 'success');
-    }
-
-    async function deletePlayer(id) {
-        if (confirm('Supprimer ce joueur ?')) {
-            const res = await fetch(`/api/players/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                showMessage('Joueur supprimé.');
-                fetchPlayers();
-            } else {
-                showMessage('Erreur lors de la suppression.', 'error');
-            }
-        }
-    }
-
-    document.getElementById('playerForm').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const id = document.getElementById('playerId').value;
-        const name = document.getElementById('playerName').value;
-        const email = document.getElementById('playerEmail').value;
-        const password = document.getElementById('playerPassword').value;
-
-        const playerData = { name, email, password };
-
-        try {
-            if (id) {
-                const res = await fetch(`/api/players/${id}`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(playerData)
-                });
-                if (!res.ok) throw new Error();
-                showMessage('Joueur mis à jour.');
-            } else {
-                const res = await fetch('/register', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(playerData)
-                });
-                if (!res.ok) throw new Error();
-                showMessage('Joueur ajouté.');
-            }
-        } catch {
-            showMessage('Une erreur est survenue.', 'error');
-        }
-
-        document.getElementById('playerForm').reset();
         fetchPlayers();
-    });
-
-    fetchPlayers();
-</script>
-
-</body>
-</html>
+    </script>
+{% endblock %}
