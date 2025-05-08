@@ -1,15 +1,104 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <title>Gestion des Joueurs</title>
     <style>
-        table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
-        input, button { margin: 5px; }
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            margin: 2rem;
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        th {
+            background-color: #f0f0f0;
+        }
+
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        form {
+            background: #fff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 8px;
+            margin-bottom: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 18px;
+            text-align: center;
+            font-size: 14px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .actions button {
+            margin-right: 5px;
+            background-color: #2196F3;
+        }
+
+        .actions button:last-child {
+            background-color: #f44336;
+        }
+
+        .message {
+            padding: 12px;
+            margin-bottom: 16px;
+            border-radius: 4px;
+        }
+
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
     </style>
 </head>
 <body>
-<h1>Liste des Joueurs</h1>
+
+<h1>Gestion des Joueurs</h1>
+
+<div id="feedback"></div>
 
 <table id="playersTable">
     <thead>
@@ -26,13 +115,26 @@
 <h2>Ajouter / Modifier un joueur</h2>
 <form id="playerForm">
     <input type="hidden" id="playerId">
+    <label for="playerName">Nom :</label>
     <input type="text" id="playerName" placeholder="Nom" required>
+
+    <label for="playerEmail">Email :</label>
     <input type="email" id="playerEmail" placeholder="Email" required>
+
+    <label for="playerPassword">Mot de passe :</label>
     <input type="password" id="playerPassword" placeholder="Mot de passe" required>
+
     <button type="submit">Enregistrer</button>
 </form>
 
 <script>
+    const feedbackDiv = document.getElementById('feedback');
+
+    function showMessage(message, type = 'success') {
+        feedbackDiv.innerHTML = `<div class="message ${type}">${message}</div>`;
+        setTimeout(() => feedbackDiv.innerHTML = '', 3000);
+    }
+
     async function fetchPlayers() {
         const response = await fetch('/api/players');
         const players = await response.json();
@@ -41,14 +143,14 @@
         players.forEach(player => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                    <td>${player.id}</td>
-                    <td>${player.name}</td>
-                    <td>${player.email}</td>
-                    <td>
-                        <button onclick="editPlayer(${player.id}, '${player.name}', '${player.email}')">Modifier</button>
-                        <button onclick="deletePlayer(${player.id})">Supprimer</button>
-                    </td>
-                `;
+                <td>${player.id}</td>
+                <td>${player.name}</td>
+                <td>${player.email}</td>
+                <td class="actions">
+                    <button onclick="editPlayer(${player.id}, '${player.name}', '${player.email}')">Modifier</button>
+                    <button onclick="deletePlayer(${player.id})">Supprimer</button>
+                </td>
+            `;
             tbody.appendChild(row);
         });
     }
@@ -58,12 +160,18 @@
         document.getElementById('playerName').value = name;
         document.getElementById('playerEmail').value = email;
         document.getElementById('playerPassword').value = '';
+        showMessage('Vous éditez un joueur.', 'success');
     }
 
     async function deletePlayer(id) {
         if (confirm('Supprimer ce joueur ?')) {
-            await fetch(`/api/players/${id}`, { method: 'DELETE' });
-            fetchPlayers();
+            const res = await fetch(`/api/players/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                showMessage('Joueur supprimé.');
+                fetchPlayers();
+            } else {
+                showMessage('Erreur lors de la suppression.', 'error');
+            }
         }
     }
 
@@ -76,27 +184,34 @@
 
         const playerData = { name, email, password };
 
-        if (id) {
-            // Modification
-            await fetch(`/api/players/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(playerData)
-            });
-        } else {
-            // Création
-            await fetch('/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(playerData)
-            });
+        try {
+            if (id) {
+                const res = await fetch(`/api/players/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(playerData)
+                });
+                if (!res.ok) throw new Error();
+                showMessage('Joueur mis à jour.');
+            } else {
+                const res = await fetch('/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(playerData)
+                });
+                if (!res.ok) throw new Error();
+                showMessage('Joueur ajouté.');
+            }
+        } catch {
+            showMessage('Une erreur est survenue.', 'error');
         }
 
         document.getElementById('playerForm').reset();
         fetchPlayers();
     });
 
-    fetchPlayers(); // Chargement initial
+    fetchPlayers();
 </script>
+
 </body>
 </html>

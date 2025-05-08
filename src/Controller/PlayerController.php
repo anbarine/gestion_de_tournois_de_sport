@@ -33,29 +33,6 @@ class PlayerController extends AbstractController
         return $this->json($data);
     }
 
-    #[Route('/register', name: 'register_player', methods: ['POST'])]
-    public function register(
-        Request $request,
-        EntityManagerInterface $em,
-        UserPasswordHasherInterface $passwordHasher
-    ): JsonResponse {
-        $data = json_decode($request->getContent(), true);
-
-        $user = new User();
-        $user->setFirstName($data['firstName']);
-        $user->setLastName($data['lastName']);
-        $user->setUsername($data['username']);
-        $user->setEmailAddress($data['emailAddress']);
-        $user->setStatus('active');
-        $user->setRoles(['ROLE_USER']);
-        $user->setPassword($passwordHasher->hashPassword($user, $data['password']));
-
-        $em->persist($user);
-        $em->flush();
-
-        return $this->json(['message' => 'User registered'], Response::HTTP_CREATED);
-    }
-
     #[Route('/api/players/{id}', name: 'get_player', methods: ['GET'])]
     public function getPlayer(User $user): JsonResponse
     {
