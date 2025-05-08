@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Gestion des Joueurs</title>
+    <style>
+        table, th, td { border: 1px solid black; border-collapse: collapse; padding: 5px; }
+        input, button { margin: 5px; }
+    </style>
+</head>
+<body>
+<h1>Liste des Joueurs</h1>
+
+<table id="playersTable">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Nom</th>
+        <th>Email</th>
+        <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody></tbody>
+</table>
+
+<h2>Ajouter / Modifier un joueur</h2>
+<form id="playerForm">
+    <input type="hidden" id="playerId">
+    <input type="text" id="playerName" placeholder="Nom" required>
+    <input type="email" id="playerEmail" placeholder="Email" required>
+    <input type="password" id="playerPassword" placeholder="Mot de passe" required>
+    <button type="submit">Enregistrer</button>
+</form>
+
+<script>
+    async function fetchPlayers() {
+        const response = await fetch('/api/players');
+        const players = await response.json();
+        const tbody = document.querySelector('#playersTable tbody');
+        tbody.innerHTML = '';
+        players.forEach(player => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                    <td>${player.id}</td>
+                    <td>${player.name}</td>
+                    <td>${player.email}</td>
+                    <td>
+                        <button onclick="editPlayer(${player.id}, '${player.name}', '${player.email}')">Modifier</button>
+                        <button onclick="deletePlayer(${player.id})">Supprimer</button>
+                    </td>
+                `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function editPlayer(id, name, email) {
+        document.getElementById('playerId').value = id;
+        document.getElementById('playerName').value = name;
+        document.getElementById('playerEmail').value = email;
+        document.getElementById('playerPassword').value = '';
+    }
+
+    async function deletePlayer(id) {
+        if (confirm('Supprimer ce joueur ?')) {
+            await fetch(`/api/players/${id}`, { method: 'DELETE' });
+            fetchPlayers();
+        }
+    }
+
+    document.getElementById('playerForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('playerId').value;
+        const name = document.getElementById('playerName').value;
+        const email = document.getElementById('playerEmail').value;
+        const password = document.getElementById('playerPassword').value;
+
+        const playerData = { name, email, password };
+
+        if (id) {
+            // Modification
+            await fetch(`/api/players/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(playerData)
+            });
+        } else {
+            // Création
+            await fetch('/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(playerData)
+            });
+        }
+
+        document.getElementById('playerForm').reset();
+        fetchPlayers();
+    });
+
+    fetchPlayers(); // Chargement initial
+</script>
+</body>
+</html>
