@@ -69,7 +69,8 @@ class PlayerController extends AbstractController
                     ->from(new Address('teyaranbarine@gmail.com', 'Registration Bot'))
                     ->to((string) $user->getEmailAddress())
                     ->subject('Please Confirm your Email')
-                    ->htmlTemplate('registration/index.html.twig')
+                    ->htmlTemplate('registration/confirmation_email.html.twig')
+
             );
 
             // do anything else you need here, like send an email
@@ -78,7 +79,7 @@ class PlayerController extends AbstractController
         }
 
         return $this->render('registration/index.html.twig', [
-            'registrationForm' => $form,
+            'registrationForm' => $form->createView(),
         ]);
     }
 
