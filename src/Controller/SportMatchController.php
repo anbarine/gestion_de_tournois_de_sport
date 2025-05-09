@@ -3,41 +3,37 @@
 namespace App\Controller;
 
 use App\Entity\SportMatch;
-use App\Entity\Tournament;
-use App\Entity\User;
 use App\Repository\SportMatchRepository;
 use App\Repository\TournamentRepository;
 use App\Repository\UserRepository;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\Response;
 
 class SportMatchController extends AbstractController
 {
-    /**
-     * @Route("/api/tournaments/{id}/sport-matchs", methods={"GET"})
-     */
+    #[Route('/api/tournaments/{id}/sport-matchs', name: 'get_sport_matches', methods: ['GET'])]
     public function getSportMatches(int $id, SportMatchRepository $sportMatchRepository): JsonResponse
     {
-        $tournament = $sportMatchRepository->findBy(['tournament' => $id]);
-        if (!$tournament) {
-            return $this->json(['error' => 'Tournament not found'], Response::HTTP_NOT_FOUND);
+        $matches = $sportMatchRepository->findBy(['tournament' => $id]);
+
+        if (!$matches) {
+            return $this->json(['error' => 'Tournament not found or no matches'], Response::HTTP_NOT_FOUND);
         }
 
-        return $this->json($tournament);
+        return $this->json($matches);
     }
 
-    /**
-     * @Route("/api/tournaments/{id}/sport-matchs", methods={"POST"})
-     */
+    #[Route('/api/tournaments/{id}/sport-matchs', name: 'create_sport_match', methods: ['POST'])]
     public function createSportMatch(
         int $id,
         Request $request,
         TournamentRepository $tournamentRepository,
-        UserRepository $userRepository
+        UserRepository $userRepository,
+        EntityManagerInterface $entityManager
     ): JsonResponse
     {
         $tournament = $tournamentRepository->find($id);
@@ -47,8 +43,8 @@ class SportMatchController extends AbstractController
         }
 
         $data = json_decode($request->getContent(), true);
-        $player1 = $userRepository->find($data['player1']);
-        $player2 = $userRepository->find($data['player2']);
+        $player1 = $userRepository->find($data['player1'] ?? null);
+        $player2 = $userRepository->find($data['player2'] ?? null);
 
         if (!$player1 || !$player2) {
             return $this->json(['error' => 'Players not found'], Response::HTTP_NOT_FOUND);
@@ -59,19 +55,20 @@ class SportMatchController extends AbstractController
         $sportMatch->setPlayer1($player1);
         $sportMatch->setPlayer2($player2);
         $sportMatch->setMatchDate(new \DateTime());
-        $sportMatch->setStatus('pending');  // par défaut, le statut est "en attente"
+        $sportMatch->setStatus('pending');
 
-        $entityManager = $this->getDoctrine()->getManager();
         $entityManager->persist($sportMatch);
         $entityManager->flush();
 
         return $this->json($sportMatch, Response::HTTP_CREATED);
     }
 
-    /**
-     * @Route("/api/tournaments/{idTournament}/sport-matchs/{idSportMatch}", methods={"GET"})
-     */
-    public function getSportMatchDetails(int $idTournament, int $idSportMatch, SportMatchRepository $sportMatchRepository): JsonResponse
+    #[Route('/api/tournaments/{idTournament}/sport-matchs/{idSportMatch}', name: 'get_sport_match_details', methods: ['GET'])]
+    public function getSportMatchDetails(
+        int $idTournament,
+        int $idSportMatch,
+        SportMatchRepository $sportMatchRepository
+    ): JsonResponse
     {
         $sportMatch = $sportMatchRepository->findOneBy([
             'tournament' => $idTournament,
@@ -85,15 +82,14 @@ class SportMatchController extends AbstractController
         return $this->json($sportMatch);
     }
 
-    /**
-     * @Route("/api/tournaments/{idTournament}/sport-matchs/{idSportMatch}", methods={"PUT"})
-     */
+    #[Route('/api/tournaments/{idTournament}/sport-matchs/{idSportMatch}', name: 'update_sport_match', methods: ['PUT'])]
     public function updateSportMatch(
         int $idTournament,
         int $idSportMatch,
         Request $request,
         SportMatchRepository $sportMatchRepository,
-        UserRepository $userRepository
+        UserRepository $userRepository,
+        EntityManagerInterface $entityManager
     ): JsonResponse
     {
         $sportMatch = $sportMatchRepository->findOneBy([
@@ -105,7 +101,6 @@ class SportMatchController extends AbstractController
             return $this->json(['error' => 'SportMatch not found'], Response::HTTP_NOT_FOUND);
         }
 
-        // Assurez-vous que l'utilisateur qui modifie le score est l'un des joueurs ou un administrateur
         $data = json_decode($request->getContent(), true);
         $user = $this->getUser();
 
@@ -121,24 +116,21 @@ class SportMatchController extends AbstractController
             $sportMatch->setScorePlayer2($data['scorePlayer2']);
         }
 
-        $sportMatch->setStatus('completed');  // Change le statut en "terminé" si les deux scores sont fournis
-        if ($sportMatch->getScorePlayer1() && $sportMatch->getScorePlayer2()) {
+        if ($sportMatch->getScorePlayer1() !== null && $sportMatch->getScorePlayer2() !== null) {
             $sportMatch->setStatus('completed');
         }
 
-        $entityManager = $this->getDoctrine()->getManager();
         $entityManager->flush();
 
         return $this->json($sportMatch);
     }
 
-    /**
-     * @Route("/api/tournaments/{idTournament}/sport-matchs/{idSportMatch}", methods={"DELETE"})
-     */
+    #[Route('/api/tournaments/{idTournament}/sport-matchs/{idSportMatch}', name: 'delete_sport_match', methods: ['DELETE'])]
     public function deleteSportMatch(
         int $idTournament,
         int $idSportMatch,
-        SportMatchRepository $sportMatchRepository
+        SportMatchRepository $sportMatchRepository,
+        EntityManagerInterface $entityManager
     ): JsonResponse
     {
         $sportMatch = $sportMatchRepository->findOneBy([
@@ -150,7 +142,6 @@ class SportMatchController extends AbstractController
             return $this->json(['error' => 'SportMatch not found'], Response::HTTP_NOT_FOUND);
         }
 
-        $entityManager = $this->getDoctrine()->getManager();
         $entityManager->remove($sportMatch);
         $entityManager->flush();
 

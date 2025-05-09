@@ -17,9 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RegistrationController extends AbstractController
 {
-    /**
-     * @Route("/api/tournaments/{id}/registrations", methods={"GET"})
-     */
+    #[Route('/api/tournaments/{id}/registrations', methods: ['GET'])]
     public function getRegistrations(int $id, TournamentRepository $tournamentRepo, RegistrationRepository $registrationRepo): JsonResponse
     {
         $tournament = $tournamentRepo->find($id);
@@ -32,9 +30,7 @@ class RegistrationController extends AbstractController
         return $this->json($registrations);
     }
 
-    /**
-     * @Route("/api/tournaments/{id}/registrations", methods={"POST"})
-     */
+    #[Route('/api/tournaments/{id}/registrations', methods: ['POST'])]
     public function registerToTournament(
         int $id,
         Request $request,
@@ -81,9 +77,7 @@ class RegistrationController extends AbstractController
         return $this->json($registration, Response::HTTP_CREATED);
     }
 
-    /**
-     * @Route("/api/tournaments/{idTournament}/registrations/{idRegistration}", methods={"DELETE"})
-     */
+    #[Route('/api/tournaments/{idTournament}/registrations/{idRegistration}', methods: ['DELETE'])]
     public function deleteRegistration(
         int $idTournament,
         int $idRegistration,

@@ -29,10 +29,10 @@ class SportMatch
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     private ?\DateTime $matchDate = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
     private ?int $scorePlayer1 = null;
 
-    #[ORM\Column]
+    #[ORM\Column(nullable: true)]
     private ?int $scorePlayer2 = null;
 
     #[ORM\Column(length: 255)]
@@ -96,7 +96,7 @@ class SportMatch
         return $this->scorePlayer1;
     }
 
-    public function setScorePlayer1(int $scorePlayer1): static
+    public function setScorePlayer1(?int $scorePlayer1): static
     {
         $this->scorePlayer1 = $scorePlayer1;
 
@@ -108,7 +108,7 @@ class SportMatch
         return $this->scorePlayer2;
     }
 
-    public function setScorePlayer2(int $scorePlayer2): static
+    public function setScorePlayer2(?int $scorePlayer2): static
     {
         $this->scorePlayer2 = $scorePlayer2;
 
